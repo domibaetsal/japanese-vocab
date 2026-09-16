@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#ffffff" />
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="일본어 암기">
+<title>일본어 단어 암기</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --text:#16181d; --muted:#6f7682;
+    --line:#e7e9ee; --accent:#16181d; --soft:#f0f2f5;
+    --ok:#eaf7ef; --bad:#fff0f0; --shadow:0 10px 30px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+  body{min-height:100vh}
+  button,input,select,textarea{font:inherit}
+  button{touch-action:manipulation}
+  .app{max-width:720px;margin:0 auto;padding:12px 14px calc(28px + env(safe-area-inset-bottom))}
+  .top{position:sticky;top:0;z-index:5;background:rgba(246,247,249,.92);backdrop-filter:blur(10px);padding:8px 0 10px}
+  .titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  h1{font-size:20px;margin:0}
+  .tiny{font-size:12px;color:var(--muted)}
+  .progressBox{margin-top:10px}
+  .progressText{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:7px}
+  .bar{height:8px;border-radius:999px;background:#e7e9ee;overflow:hidden}
+  .bar>div{height:100%;width:0;background:#20242b;transition:width .25s ease}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+  .tab{border:1px solid var(--line);background:#fff;padding:12px 6px;border-radius:12px;font-weight:700;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;z-index:20;cursor:pointer;min-height:46px}
+  .tab.active{background:#20242b;color:#fff;border-color:#20242b}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .seg{display:flex;background:#e9ebef;border-radius:12px;padding:3px;gap:3px}
+  .seg button{border:0;background:transparent;padding:9px 12px;border-radius:9px;font-weight:700}
+  .seg button.active{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .iconBtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px 18px;min-height:430px;display:flex;flex-direction:column}
+  .counter{text-align:center;font-size:13px;color:var(--muted)}
+  .mainWord{font-family:"Hiragino Sans","Yu Gothic",sans-serif;font-size:clamp(42px,12vw,68px);line-height:1.2;text-align:center;margin:24px 0 10px;font-weight:700;word-break:break-word}
+  .reading{font-size:20px;text-align:center;color:#4f5661;margin-bottom:16px}
+  .meaning{margin:14px auto 6px;text-align:center;font-size:28px;line-height:1.4;font-weight:800;max-width:90%}
+  .hiddenBlock{filter:blur(12px);user-select:none;cursor:pointer;transition:filter .15s ease}
+  .hiddenBlock.show{filter:none;user-select:auto}
+  .revealHint{text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
+  .audioBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin:10px auto 0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:11px 16px;font-weight:700}
+  .spacer{flex:1}
+  .stateBtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .stateBtns button{min-height:58px;border-radius:15px;border:1px solid var(--line);font-weight:800;font-size:17px}
+  .btnUnknown{background:var(--bad)}
+  .btnKnown{background:var(--ok)}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .nav button{min-height:48px;border:1px solid var(--line);background:#fff;border-radius:14px;font-weight:700}
+  .empty{padding:50px 16px;text-align:center;color:var(--muted)}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+  .panel h2{margin:0 0 14px;font-size:18px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 13px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .actions button,.fileLabel{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 13px;font-weight:700;cursor:pointer}
+  .primary{background:#20242b!important;color:#fff!important;border-color:#20242b!important}
+  .danger{background:#fff0f0!important}
+  .wordList{margin-top:14px;display:grid;gap:8px}
+  .wordItem{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:11px 12px}
+  .wordItem strong{font-size:18px}
+  .wordItem small{display:block;color:var(--muted);margin-top:3px}
+  .wordItem button{border:0;background:#f1f2f5;border-radius:9px;padding:8px 10px}
+  .quizPrompt{font-size:15px;color:var(--muted);text-align:center;margin:12px 0 0}
+  .canvasWrap{margin-top:18px}
+  canvas{display:block;width:100%;height:260px;background:#fff;border:2px dashed #d7dae1;border-radius:18px;touch-action:none}
+  .canvasTools{display:flex;gap:8px;margin-top:8px}
+  .canvasTools button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:700}
+  .answerBox{margin-top:14px;padding:14px;border-radius:15px;background:#f6f7f9;text-align:center}
+  .answerBox .ans{font-size:34px;font-weight:800;font-family:"Hiragino Sans","Yu Gothic",sans-serif}
+  .selfGrade{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .selfGrade button{min-height:54px;border:1px solid var(--line);border-radius:14px;font-size:16px;font-weight:800}
+  .note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+  .hidden{display:none!important}
+  .dashboardGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
+  .statCard{background:#f6f7f9;border-radius:14px;padding:13px 8px;text-align:center}
+  .statCard strong{display:block;font-size:23px;margin-bottom:3px}
+  .optionBox{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:12px}
+  .optionTitle{font-size:13px;color:var(--muted);margin-bottom:9px}
+  .checks{display:flex;gap:8px;flex-wrap:wrap}
+  .check{display:flex;align-items:center;gap:6px;background:#f6f7f9;border-radius:10px;padding:9px 10px;font-size:14px;font-weight:700}
+  .startBtn{width:100%;min-height:56px;border:0;border-radius:15px;background:#20242b;color:#fff;font-weight:800;font-size:17px;margin-top:14px}
+  .resetBtn{min-height:46px;border:1px solid var(--line);border-radius:13px;background:#fff;font-weight:700}
+  .roundBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+  .nextRoundBtn{min-height:46px;border:0;border-radius:13px;background:#20242b;color:#fff;font-weight:800}
+  .studyPart{position:relative}
+  .studyPart.blurred{user-select:none;-webkit-user-select:none}
+  .studyPart.blurred::after{
+    content:"";
+    position:absolute;
+    inset:-3px -5px;
+    border-radius:8px;
+    background:#d9dde3;
+    z-index:2;
+    pointer-events:none;
+  }
+  .quizFlag{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:#f0f2f5;margin-top:7px}
+
+  .statusPill{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:#f0f2f5;margin-left:6px}
+  @media(max-width:480px){
+    .app{padding-left:10px;padding-right:10px}
+    .card{min-height:calc(100vh - 260px);padding:18px 14px}
+    .mainWord{margin-top:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="titleRow">
+      <div><h1>일본어 단어 암기</h1><div style="font-size:10px;color:#9aa0a9;margin-top:2px">v4.5 · 정답 버튼으로만 공개</div></div>
+      <span class="tiny" id="saveState">자동 저장</span>
+    </div>
+    <div class="progressBox">
+      <div class="progressText"><span id="progressText">0 / 0 암기 완료</span><span id="progressPct">0%</span></div>
+      <div class="bar"><div id="progressBar"></div></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button type="button" class="tab active" data-tab="study">암기</button>
+    <button type="button" class="tab" data-tab="manage">단어 관리</button>
+    <button type="button" class="tab" data-tab="sync">동기화</button>
+  </div>
+
+  <section id="studySection">
+    <div id="studyDashboard" class="panel">
+      <h2>암기 현황</h2>
+      <div class="dashboardGrid">
+        <div class="statCard"><strong id="roundStat">1</strong><span class="tiny">회독</span></div>
+        <div class="statCard"><strong id="dashPct">0%</strong><span class="tiny">암기율</span></div>
+        <div class="statCard"><strong id="dashKnown">0/0</strong><span class="tiny">외운 단어</span></div>
+      </div>
+      <div class="optionBox">
+        <div class="optionTitle">처음부터 블러 처리할 항목</div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="blurWord"> 단어</label>
+          <label class="check"><input type="checkbox" id="blurReading"> 히라가나</label>
+          <label class="check"><input type="checkbox" id="blurMeaning" checked> 뜻</label>
+        </div>
+        <div class="note">선택한 항목은 암기 중 가려지며, 정답 확인 버튼을 눌러야 공개됩니다.</div>
+      </div>
+      <button type="button" id="startStudyBtn" class="startBtn">단어 암기 시작</button>
+      <div class="roundBtns">
+        <button type="button" id="resetRoundBtn" class="resetBtn">회독 초기화</button>
+        <button type="button" id="nextRoundBtn" class="nextRoundBtn">다음 회독 시작</button>
+      </div>
+    </div>
+
+    <div id="studySession" class="hidden">
+      <div class="toolbar">
+        <div class="seg">
+          <button id="filterAll" class="active">전체</button>
+          <button id="filterUnknown">모르는 단어</button>
+        </div>
+        <button class="iconBtn" id="backDashboardBtn">현황</button>
+        <button class="iconBtn" id="shuffleBtn">섞기</button>
+      </div>
+      <div id="studyEmpty" class="panel empty hidden">표시할 단어가 없습니다.</div>
+      <div id="studyCard" class="card">
+        <div class="counter" id="counter">1 / 1</div>
+        <div class="mainWord studyPart" id="wordText">日本語</div>
+        <div class="reading studyPart" id="readingText">にほんご</div>
+        <button class="audioBtn" id="speakBtn">🔊 음성 듣기</button>
+        <div class="meaning studyPart" id="meaningText">일본어</div>
+        <div class="revealHint">가려진 내용은 아래의 정답 확인 버튼을 누르면 공개됩니다.</div>
+
+        <div class="canvasWrap">
+          <div class="tiny" style="margin-bottom:7px">손글씨 연습</div>
+          <canvas id="drawCanvas" width="700" height="520"></canvas>
+          <div class="canvasTools">
+            <button id="clearCanvas">지우기</button>
+            <button id="showAnswer" class="primary">정답 확인</button>
+          </div>
+        </div>
+<div class="spacer"></div>
+        <div class="stateBtns">
+          <button class="btnUnknown" id="unknownBtn">모름</button>
+          <button class="btnKnown" id="knownBtn">외웠음</button>
+        </div>
+        <div class="nav">
+          <button id="prevBtn">이전</button>
+          <button id="nextBtn">다음</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="manageSection" class="hidden">
+    <div class="panel">
+      <h2>단어 추가 / 수정</h2>
+      <input type="hidden" id="editId">
+      <div class="field"><label>단어</label><input id="fWord" placeholder="例: 勉強"></div>
+      <div class="field"><label>히라가나</label><input id="fReading" placeholder="例: べんきょう"></div>
+      <div class="field"><label>뜻</label><input id="fMeaning" placeholder="例: 공부"></div>
+      <div class="actions">
+        <button id="saveWordBtn" class="primary">저장</button>
+        <button id="cancelEditBtn">입력 초기화</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <h2>CSV 가져오기 / 백업</h2>
+      <div class="actions">
+        <label class="fileLabel">
+          CSV 불러오기
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+        </label>
+        <button id="exportCsvBtn">CSV 내보내기</button>
+        <button id="exportJsonBtn">JSON 백업</button>
+        <label class="fileLabel">
+          JSON 복원
+          <input type="file" id="jsonFile" accept=".json,application/json" hidden>
+        </label>
+      </div>
+      <div class="note">
+        <b>CSV를 다시 불러와도 기존 외움/모름 기록은 유지됩니다.</b><br>CSV 첫 행 권장 형식: <b>단어,히라가나,뜻</b><br>
+        엑셀에서 작성한 뒤 “CSV UTF-8(쉼표로 분리)”로 저장해 불러오면 됩니다.
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <h2>단어 목록 <span class="statusPill" id="wordCountPill">0개</span></h2>
+      <div id="wordList" class="wordList"></div>
+    </div>
+  </section>
+
+  <section id="syncSection" class="hidden">
+    <div class="panel">
+      <h2>PC ↔ iPhone 동기화</h2>
+      <div id="syncStatusBox" style="background:#f6f7f9;border-radius:14px;padding:13px;margin-bottom:14px">
+        <strong id="syncStatusText">동기화 설정 안 됨</strong>
+        <div class="tiny" id="lastSyncText" style="margin-top:5px">이 기기에만 저장 중입니다.</div>
+      </div>
+      <div class="field"><label>Google Apps Script 웹 앱 URL</label><input id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="field"><label>동기화 키</label><input id="syncKey" placeholder="PC와 iPhone에서 같은 키 사용"></div>
+      <div class="actions">
+        <button id="makeKeyBtn">긴 동기화 키 만들기</button>
+        <button id="saveSyncBtn" class="primary">설정 저장</button>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="syncNowBtn" class="primary">지금 동기화</button>
+        <button id="pullBtn">클라우드에서 받기</button>
+        <button id="pushBtn">이 기기에서 올리기</button>
+      </div>
+      <div class="note">같은 웹 앱 URL과 같은 동기화 키를 PC와 iPhone에 입력하면 단어와 외움/모름 상태가 동기화됩니다. 오프라인일 때는 기기에 저장되고, 온라인이 되면 자동 동기화를 시도합니다.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'jp_vocab_app_v1';
+  const SAMPLE = [
+    {id: crypto.randomUUID?.() || String(Date.now()+1), word:'勉強', reading:'べんきょう', meaning:'공부', status:'unknown'},
+    {id: crypto.randomUUID?.() || String(Date.now()+2), word:'約束', reading:'やくそく', meaning:'약속', status:'unknown'},
+    {id: crypto.randomUUID?.() || String(Date.now()+3), word:'大切', reading:'たいせつ', meaning:'소중함, 중요함', status:'unknown'}
+  ];
+
+  let state = loadState();
+  let filter = 'all';
+  let index = 0;
+  let quizIndex = 0;
+  let syncTimer = null;
+  let syncing = false;
+  const SYNC_CFG_KEY = 'jp_vocab_sync_cfg_v1';
+
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+
+  function normalizeState(s){
+    if(!s || !Array.isArray(s.words)) s={words:SAMPLE,updatedAt:Date.now()};
+    s.deleted=s.deleted||{};
+    s.round=(s.round===undefined||s.round===null)?0:Number(s.round);
+    s.studyOptions={blurWord:false,blurReading:false,blurMeaning:true,...(s.studyOptions||{})};
+    s.words=s.words.map(w=>{const {quizFlag,...rest}=w; return {...rest,modifiedAt:Number(w.modifiedAt)||Number(s.updatedAt)||Date.now()};});
+    s.updatedAt=Number(s.updatedAt)||Date.now();
+    return s;
+  }
+  function loadState(){
+    try{
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if(saved){
+        const parsed = JSON.parse(saved);
+        if(Array.isArray(parsed.words)) return normalizeState(parsed);
+      }
+    }catch(e){}
+    return normalizeState({words:SAMPLE, updatedAt:Date.now(),deleted:{}});
+  }
+  function syncCfg(){ try{return JSON.parse(localStorage.getItem(SYNC_CFG_KEY)||'{}')}catch(e){return{}} }
+  function saveSyncCfg(c){ localStorage.setItem(SYNC_CFG_KEY,JSON.stringify(c)); }
+  function keyOf(w){ return (w.word||'').trim()+'\u0001'+(w.reading||'').trim(); }
+
+  function saveState(markChanged=true){
+    if(markChanged) state.updatedAt = Date.now();
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      $('#saveState').textContent = '자동 저장됨';
+      setTimeout(()=> $('#saveState').textContent='자동 저장', 800);
+    }catch(e){
+      $('#saveState').textContent = '저장 실패';
+    }
+    renderProgress();
+    renderList();
+    if(markChanged) scheduleAutoSync();
+  }
+
+  function renderProgress(){
+    const total = state.words.length;
+    const known = state.words.filter(w=>w.status==='known').length;
+    const pct = total ? Math.round(known/total*100) : 0;
+    $('#progressText').textContent = `${known} / ${total} 암기 완료`;
+    $('#progressPct').textContent = `${pct}%`;
+    $('#progressBar').style.width = `${pct}%`;
+    const wc=$('#wordCountPill'); if(wc) wc.textContent = `${total}개`;
+    const rs=$('#roundStat'); if(rs) rs.textContent=state.round??0;
+    const dp=$('#dashPct'); if(dp) dp.textContent=`${pct}%`;
+    const dk=$('#dashKnown'); if(dk) dk.textContent=`${known}/${total}`;
+  }
+
+  function visibleWords(){
+    return filter==='unknown' ? state.words.filter(w=>w.status!=='known') : state.words;
+  }
+
+  function currentWord(){
+    const arr = visibleWords();
+    if(!arr.length) return null;
+    if(index >= arr.length) index = 0;
+    if(index < 0) index = arr.length - 1;
+    return arr[index];
+  }
+
+  function renderStudy(){
+    const arr = visibleWords();
+    const w = currentWord();
+    $('#studyCard').classList.toggle('hidden', !w);
+    $('#studyEmpty').classList.toggle('hidden', !!w);
+    if(!w) return;
+    $('#counter').textContent = `${index+1} / ${arr.length}`;
+    $('#wordText').textContent = w.word;
+    $('#readingText').textContent = w.reading || '';
+    $('#meaningText').textContent = w.meaning || '';
+    const opt=state.studyOptions||{};
+    $('#wordText').classList.toggle('blurred',!!opt.blurWord);
+    $('#readingText').classList.toggle('blurred',!!opt.blurReading);
+    $('#meaningText').classList.toggle('blurred',!!opt.blurMeaning);
+    $('#knownBtn').textContent = w.status==='known' ? '외웠음 ✓' : '외웠음';
+    $('#unknownBtn').textContent = w.status==='unknown' ? '모름 ✓' : '모름';
+    if(typeof clearCanvas==='function') clearCanvas();
+  }
+
+  function setStatus(status){
+    const w = currentWord();
+    if(!w) return;
+    const original = state.words.find(x=>x.id===w.id);
+    original.status = status;
+    original.modifiedAt = Date.now();
+    saveState();
+
+    if(filter==='unknown' && status==='known'){
+      const arr = visibleWords();
+      if(index >= arr.length) index = Math.max(0, arr.length-1);
+    } else {
+      index++;
+      if(index >= visibleWords().length) index = 0;
+    }
+    renderStudy();
+  }
+
+  function speakCurrent(){
+    const w = currentWord();
+    if(!w || !('speechSynthesis' in window)){
+      alert('이 브라우저에서는 음성 읽기를 사용할 수 없습니다.');
+      return;
+    }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(w.word || w.reading);
+    u.lang = 'ja-JP';
+    u.rate = 0.85;
+    const voices = speechSynthesis.getVoices();
+    const jaVoice = voices.find(v => /^ja(-|_)/i.test(v.lang));
+    if(jaVoice) u.voice = jaVoice;
+    speechSynthesis.speak(u);
+  }
+
+
+  $('#unknownBtn').onclick = ()=>setStatus('unknown');
+  $('#knownBtn').onclick = ()=>setStatus('known');
+  $('#speakBtn').onclick = speakCurrent;
+  $('#prevBtn').onclick = ()=>{ index--; renderStudy(); };
+  $('#nextBtn').onclick = ()=>{ index++; renderStudy(); };
+
+  function loadStudyOptionsUI(){
+    const o=state.studyOptions||{};
+    $('#blurWord').checked=!!o.blurWord; $('#blurReading').checked=!!o.blurReading; $('#blurMeaning').checked=!!o.blurMeaning;
+  }
+  function saveStudyOptions(){
+    state.studyOptions={blurWord:$('#blurWord').checked,blurReading:$('#blurReading').checked,blurMeaning:$('#blurMeaning').checked};
+    saveState();
+  }
+  ['#blurWord','#blurReading','#blurMeaning'].forEach(sel=>$(sel).addEventListener('change',saveStudyOptions));
+  $('#startStudyBtn').onclick=()=>{ saveStudyOptions(); index=0; $('#studyDashboard').classList.add('hidden'); $('#studySession').classList.remove('hidden'); renderStudy(); };
+  $('#backDashboardBtn').onclick=()=>{ $('#studySession').classList.add('hidden'); $('#studyDashboard').classList.remove('hidden'); renderProgress(); loadStudyOptionsUI(); };
+  $('#resetRoundBtn').onclick=()=>{
+    if(!confirm('회독수와 암기 기록을 0으로 초기화할까요?\n단어 목록과 동기화 설정은 삭제되지 않습니다.')) return;
+    state.round=0;
+    state.words.forEach(w=>{w.status='unknown';w.modifiedAt=Date.now();});
+    saveState(); index=0; renderStudy(); renderProgress(); loadStudyOptionsUI();
+    alert('학습 현황을 0회독으로 초기화했습니다.\n동기화를 누르면 다른 기기에도 반영할 수 있습니다.');
+  };
+  $('#nextRoundBtn').onclick=()=>{
+    if(!confirm(`현재 ${state.round??0}회독의 암기 기록을 초기화하고 다음 회독을 시작할까요?\n단어 목록은 그대로 유지됩니다.`)) return;
+    state.round=(Number(state.round)||0)+1;
+    state.words.forEach(w=>{w.status='unknown';w.modifiedAt=Date.now();});
+    saveState(); index=0; renderStudy(); renderProgress(); loadStudyOptionsUI();
+    alert(`${state.round}회독을 시작합니다.\n동기화를 누르면 다른 기기에도 반영할 수 있습니다.`);
+  };
+
+  $('#filterAll').onclick = ()=>{
+    filter='all'; index=0;
+    $('#filterAll').classList.add('active'); $('#filterUnknown').classList.remove('active');
+    renderStudy();
+  };
+  $('#filterUnknown').onclick = ()=>{
+    filter='unknown'; index=0;
+    $('#filterUnknown').classList.add('active'); $('#filterAll').classList.remove('active');
+    renderStudy();
+  };
+  $('#shuffleBtn').onclick = ()=>{
+    for(let i=state.words.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [state.words[i],state.words[j]]=[state.words[j],state.words[i]];
+    }
+    index=0; saveState(); renderStudy();
+  };
+
+  function openTab(tab){
+    $$('.tab').forEach(x=>x.classList.toggle('active', x.dataset.tab===tab));
+    $('#studySection').classList.toggle('hidden',tab!=='study');
+    $('#manageSection').classList.toggle('hidden',tab!=='manage');
+    $('#syncSection').classList.toggle('hidden',tab!=='sync');
+    if(tab==='study'){ $('#studySession').classList.add('hidden'); $('#studyDashboard').classList.remove('hidden'); loadStudyOptionsUI(); renderProgress(); }
+    if(tab==='sync') renderSyncSettings();
+  }
+  let lastTabTouch=0;
+  const tabsEl=document.querySelector('.tabs');
+  function tabHandler(e){
+    const btn=e.target.closest && e.target.closest('.tab[data-tab]');
+    if(!btn) return;
+    if(e.type==='touchend'){ lastTabTouch=Date.now(); e.preventDefault(); }
+    if(e.type==='click' && Date.now()-lastTabTouch<700) return;
+    openTab(btn.dataset.tab);
+  }
+  tabsEl.addEventListener('click',tabHandler,false);
+  tabsEl.addEventListener('touchend',tabHandler,{passive:false});
+
+  function resetForm(){
+    $('#editId').value=''; $('#fWord').value=''; $('#fReading').value=''; $('#fMeaning').value='';
+    $('#saveWordBtn').textContent='저장';
+  }
+  $('#cancelEditBtn').onclick=resetForm;
+  $('#saveWordBtn').onclick=()=>{
+    const word=$('#fWord').value.trim(), reading=$('#fReading').value.trim(), meaning=$('#fMeaning').value.trim();
+    if(!word || !meaning){ alert('단어와 뜻은 입력해 주세요.'); return; }
+    const id=$('#editId').value;
+    if(id){
+      const w=state.words.find(x=>x.id===id);
+      if(w){ const oldKey=keyOf(w); w.word=word; w.reading=reading; w.meaning=meaning; w.modifiedAt=Date.now(); const newKey=keyOf(w); if(oldKey!==newKey) state.deleted[oldKey]=Date.now(); }
+    }else{
+      state.words.push({id:crypto.randomUUID?.()||String(Date.now()+Math.random()),word,reading,meaning,status:'unknown',modifiedAt:Date.now()});
+    }
+    resetForm(); saveState(); renderStudy();
+  };
+
+  function renderList(){
+    const box=$('#wordList'); box.innerHTML='';
+    if(!state.words.length){ box.innerHTML='<div class="empty">등록된 단어가 없습니다.</div>'; return; }
+    state.words.forEach(w=>{
+      const el=document.createElement('div'); el.className='wordItem';
+      el.innerHTML=`<div><strong>${escapeHtml(w.word)}</strong><small>${escapeHtml(w.reading||'')} · ${escapeHtml(w.meaning||'')} · ${w.status==='known'?'외움':'모름'}</small></div>
+                    <div><button data-edit="${w.id}">수정</button> <button data-del="${w.id}">삭제</button></div>`;
+      box.appendChild(el);
+    });
+    box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
+      const w=state.words.find(x=>x.id===b.dataset.edit);
+      $('#editId').value=w.id; $('#fWord').value=w.word; $('#fReading').value=w.reading; $('#fMeaning').value=w.meaning; $('#saveWordBtn').textContent='수정 저장';
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+    box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+      if(confirm('이 단어를 삭제할까요?')){
+        const victim=state.words.find(x=>x.id===b.dataset.del); if(victim) state.deleted[keyOf(victim)]=Date.now();
+        state.words=state.words.filter(x=>x.id!==b.dataset.del);
+        saveState(); renderStudy();
+      }
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+
+  function parseCSV(text){
+    const rows=[]; let row=[], cell='', q=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i], n=text[i+1];
+      if(ch==='"'){
+        if(q && n==='"'){cell+='"'; i++;}
+        else q=!q;
+      }else if(ch===',' && !q){ row.push(cell); cell=''; }
+      else if((ch==='\n' || ch==='\r') && !q){
+        if(ch==='\r' && n==='\n') i++;
+        row.push(cell); cell='';
+        if(row.some(v=>v.trim()!=='')) rows.push(row);
+        row=[];
+      }else cell+=ch;
+    }
+    row.push(cell); if(row.some(v=>v.trim()!=='')) rows.push(row);
+    return rows;
+  }
+
+  $('#csvFile').addEventListener('change', async e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const text=await file.text();
+    const rows=parseCSV(text);
+    if(!rows.length){alert('CSV가 비어 있습니다.'); return;}
+    const header=rows[0].map(x=>x.trim().replace(/^\uFEFF/,''));
+    const wi=header.findIndex(x=>['단어','word'].includes(x));
+    const ri=header.findIndex(x=>['히라가나','읽기','reading'].includes(x));
+    const mi=header.findIndex(x=>['뜻','meaning'].includes(x));
+    if(wi<0 || mi<0){alert('첫 행에 "단어,히라가나,뜻" 헤더가 필요합니다.'); return;}
+    let added=0, updated=0;
+    rows.slice(1).forEach(r=>{
+      const word=(r[wi]||'').trim(), reading=ri>=0?(r[ri]||'').trim():'', meaning=(r[mi]||'').trim();
+      if(!word || !meaning) return;
+      const k=keyOf({word,reading});
+      const existing=state.words.find(x=>keyOf(x)===k);
+      if(existing){
+        if(existing.meaning!==meaning){ existing.meaning=meaning; existing.modifiedAt=Date.now(); updated++; }
+      }else{
+        state.words.push({id:crypto.randomUUID?.()||String(Date.now()+Math.random()),word,reading,meaning,status:'unknown',modifiedAt:Date.now()}); added++;
+      }
+    });
+    index=0; saveState(); renderStudy();
+    alert(`CSV 반영 완료\n새 단어 ${added}개 추가\n기존 단어 ${updated}개 수정\n기존 외움/모름 기록은 유지되었습니다.`);
+    e.target.value='';
+  });
+
+  function download(name, content, type){
+    const blob=new Blob([content],{type});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }
+  function csvCell(v){ v=String(v??''); return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; }
+  $('#exportCsvBtn').onclick=()=>{
+    const lines=[['단어','히라가나','뜻','상태'].join(',')];
+    state.words.forEach(w=>lines.push([w.word,w.reading,w.meaning,w.status==='known'?'외움':'모름'].map(csvCell).join(',')));
+    download('일본어단어.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');
+  };
+  $('#exportJsonBtn').onclick=()=>download('일본어단어_백업.json',JSON.stringify(state,null,2),'application/json');
+  $('#jsonFile').addEventListener('change', async e=>{
+    const file=e.target.files[0]; if(!file)return;
+    try{
+      const obj=JSON.parse(await file.text());
+      if(!obj || !Array.isArray(obj.words)) throw new Error();
+      if(confirm('현재 데이터를 백업 파일 내용으로 교체할까요?')){
+        state=obj; index=0; saveState(); renderStudy();
+      }
+    }catch{ alert('올바른 백업 파일이 아닙니다.'); }
+    e.target.value='';
+  });
+
+  // Handwriting canvas integrated into the current study card
+  const canvas=$('#drawCanvas'), ctx=canvas.getContext('2d');
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=10; ctx.strokeStyle='#111';
+  let drawing=false, last=null;
+
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    const p=e.touches?e.touches[0]:e;
+    return {x:(p.clientX-r.left)*(canvas.width/r.width), y:(p.clientY-r.top)*(canvas.height/r.height)};
+  }
+  function start(e){ drawing=true; last=pos(e); e.preventDefault(); }
+  function move(e){
+    if(!drawing)return; const p=pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; e.preventDefault();
+  }
+  function end(e){drawing=false; last=null; e.preventDefault();}
+  canvas.addEventListener('pointerdown',start); canvas.addEventListener('pointermove',move);
+  canvas.addEventListener('pointerup',end); canvas.addEventListener('pointercancel',end);
+  canvas.addEventListener('pointerleave',e=>{if(drawing)end(e)});
+  canvas.addEventListener('touchstart', e=>{ if(e.touches[0]) start(e); }, {passive:false});
+  canvas.addEventListener('touchmove', e=>{ if(e.touches[0]) move(e); }, {passive:false});
+  canvas.addEventListener('touchend', e=>{ drawing=false; last=null; e.preventDefault(); }, {passive:false});
+
+  function clearCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);}
+  $('#clearCanvas').onclick=clearCanvas;
+
+  $('#showAnswer').onclick=()=>{
+    const w=currentWord(); if(!w) return;
+    $('#wordText').classList.remove('blurred');
+    $('#readingText').classList.remove('blurred');
+    $('#meaningText').classList.remove('blurred');
+  };
+
+  function renderSyncSettings(){
+    const c=syncCfg(); $('#syncUrl').value=c.url||''; $('#syncKey').value=c.key||'';
+    $('#syncStatusText').textContent=c.url&&c.key?'동기화 준비됨':'동기화 설정 안 됨';
+    $('#lastSyncText').textContent=c.lastSync?'마지막 동기화: '+new Date(c.lastSync).toLocaleString():(c.url&&c.key?'아직 동기화하지 않았습니다.':'이 기기에만 저장 중입니다.');
+  }
+  function randomKey(){ const a=new Uint8Array(24); crypto.getRandomValues(a); return Array.from(a,b=>b.toString(16).padStart(2,'0')).join(''); }
+  $('#makeKeyBtn').onclick=()=>{$('#syncKey').value=randomKey();};
+  $('#saveSyncBtn').onclick=()=>{ const url=$('#syncUrl').value.trim(),key=$('#syncKey').value.trim(); if(!url||!key){alert('웹 앱 URL과 동기화 키를 모두 입력하세요.');return;} saveSyncCfg({...syncCfg(),url,key}); renderSyncSettings(); alert('저장했습니다. PC와 iPhone에 같은 URL과 키를 입력하세요.'); scheduleAutoSync(); };
+
+  function jsonpPull(url,key,timeout=12000){
+    return new Promise((resolve,reject)=>{ const cb='__jpSync'+Date.now()+Math.random().toString(36).slice(2), s=document.createElement('script');
+      const timer=setTimeout(()=>cleanup(new Error('시간 초과')),timeout);
+      function cleanup(err,data){clearTimeout(timer);delete window[cb];s.remove();err?reject(err):resolve(data)}
+      window[cb]=data=>cleanup(null,data); s.onerror=()=>cleanup(new Error('불러오기 실패'));
+      s.src=url+(url.includes('?')?'&':'?')+'action=pull&key='+encodeURIComponent(key)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now(); document.head.appendChild(s);
+    });
+  }
+  async function pushCloud(url,key,payload){
+    await fetch(url,{method:'POST',mode:'no-cors',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'push',key,payload})});
+  }
+  function mergeStates(local,remote){
+    local=normalizeState(local); remote=normalizeState(remote); const map=new Map();
+    remote.words.forEach(w=>map.set(keyOf(w),{...w}));
+    local.words.forEach(w=>{const k=keyOf(w),r=map.get(k); if(!r||Number(w.modifiedAt)>=Number(r.modifiedAt)) map.set(k,{...w});});
+    const del={...(remote.deleted||{}),...(local.deleted||{})};
+    Object.entries(remote.deleted||{}).forEach(([k,t])=>del[k]=Math.max(Number(del[k]||0),Number(t||0)));
+    Object.entries(local.deleted||{}).forEach(([k,t])=>del[k]=Math.max(Number(del[k]||0),Number(t||0)));
+    Object.entries(del).forEach(([k,t])=>{const w=map.get(k);if(w&&Number(t)>=Number(w.modifiedAt||0))map.delete(k)});
+    return {words:[...map.values()],deleted:del,updatedAt:Math.max(Number(local.updatedAt||0),Number(remote.updatedAt||0),Date.now())};
+  }
+  async function syncNow(mode='both',silent=false){
+    const c=syncCfg(); if(!c.url||!c.key){if(!silent)alert('동기화 탭에서 URL과 키를 먼저 설정하세요.');return;} if(syncing)return; syncing=true;
+    $('#syncStatusText').textContent='동기화 중…';
+    try{
+      if(mode==='push'){ await pushCloud(c.url,c.key,state); }
+      else if(mode==='pull'){ const r=await jsonpPull(c.url,c.key); if(!r.ok)throw new Error(r.error||'받기 실패'); if(r.payload){state=mergeStates(state,r.payload);saveState(false);renderStudy();} }
+      else { const r=await jsonpPull(c.url,c.key); if(!r.ok)throw new Error(r.error||'받기 실패'); if(r.payload)state=mergeStates(state,r.payload); saveState(false);renderStudy(); await pushCloud(c.url,c.key,state); }
+      const nc={...c,lastSync:Date.now()};saveSyncCfg(nc);$('#syncStatusText').textContent='동기화 완료';$('#lastSyncText').textContent='마지막 동기화: '+new Date(nc.lastSync).toLocaleString();$('#saveState').textContent='동기화 완료';
+    }catch(err){$('#syncStatusText').textContent='동기화 실패';$('#lastSyncText').textContent=err.message||'설정을 확인하세요.';if(!silent)alert('동기화 실패\n'+(err.message||''));}
+    finally{syncing=false;}
+  }
+  $('#syncNowBtn').onclick=()=>syncNow('both'); $('#pullBtn').onclick=()=>syncNow('pull'); $('#pushBtn').onclick=()=>syncNow('push');
+  function scheduleAutoSync(){ const c=syncCfg(); if(!c.url||!c.key||!navigator.onLine)return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>syncNow('both',true),2200); }
+  window.addEventListener('online',scheduleAutoSync); document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scheduleAutoSync()}); setInterval(()=>{const c=syncCfg();if(c.url&&c.key&&navigator.onLine)syncNow('both',true)},30000);
+
+  window.addEventListener('resize', ()=>{});
+  if('speechSynthesis' in window) speechSynthesis.onvoiceschanged=()=>{};
+  renderProgress(); renderStudy(); renderList(); nextQuiz(); renderSyncSettings(); setTimeout(scheduleAutoSync,1500);
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js?v=45').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
